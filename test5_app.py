@@ -12,7 +12,12 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import yfinance as yf
+try:
+    import yfinance as yf
+except ModuleNotFoundError:
+    # Streamlit 上で依存パッケージが無い場合に分かりやすく通知して停止する
+    st.error("依存パッケージ 'yfinance' が見つかりません。\nrequirements.txt に 'yfinance' を追加し、環境でインストールしてください。\n(ローカル) `pip install -r requirements.txt` を実行してください。")
+    st.stop()
 import altair as alt
 from streamlit_searchbox import st_searchbox
 from datetime import datetime, timedelta
