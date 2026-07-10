@@ -9,29 +9,39 @@
   - タブ3: ポートフォリオ（全保有銘柄の実勢価格で評価、資金配分の進捗バー）
 """
 
+import sys
+from pathlib import Path
+
 import streamlit as st
 import pandas as pd
 import numpy as np
-try:
-    import yfinance as yf
-except ModuleNotFoundError:
-    # Streamlit 上で依存パッケージが無い場合に分かりやすく通知して停止する
-    st.error("依存パッケージ 'yfinance' が見つかりません。\nrequirements.txt に 'yfinance' を追加し、環境でインストールしてください。\n(ローカル) `pip install -r requirements.txt` を実行してください。")
-    st.stop()
 import altair as alt
 from streamlit_searchbox import st_searchbox
 from datetime import datetime, timedelta
 
 # apps フォルダから実行した場合でもルートのモジュールを参照できるようにする
-import sys
-from pathlib import Path
-
 # プロジェクトルートは apps/ の一つ上にある想定
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
 from local_stock_catalog import get_local_stock_name, search_local_stock_options
+
+# ------------------------------------------------------------
+# yfinance の遅延インポートヘルパー
+# ------------------------------------------------------------
+
+def _import_yfinance():
+    """必要になったときに yfinance をインポートする。
+    モジュールが見つからない場合は ModuleNotFoundError を送出する。
+    """
+    try:
+        import yfinance as yf
+        return yf
+    except ModuleNotFoundError as exc:
+        raise ModuleNotFoundError(
+            "依存パッケージ 'yfinance' が見つかりません。requirements.txt に 'yfinance' を追加し、\n(ローカル) `pip install -r requirements.txt` を実行してください。"
+        ) from exc
 
 # ------------------------------------------------------------
 # 基本設定
@@ -70,6 +80,7 @@ if "last_signal" not in st.session_state:
     # {ticker: 直近に記録したシグナル}　変化検知用
     st.session_state.last_signal = {}
 
+
 def reset_portfolio(initial_cash: int) -> None:
     """仮想資金と売買履歴を指定金額で初期化する。"""
     st.session_state.initial_cash = initial_cash
@@ -86,6 +97,7 @@ def reset_portfolio(initial_cash: int) -> None:
 @st.cache_data(ttl=600, show_spinner=False)
 def fetch_stock_data(ticker: str, period_days: int) -> pd.DataFrame:
     """Yahoo Finance APIから株価データを取得する"""
+    yf = _import_yfinance()
     end = datetime.now()
     start = end - timedelta(days=period_days)
     data = yf.download(ticker, start=start, end=end, progress=False)
@@ -96,6 +108,7 @@ def fetch_stock_data(ticker: str, period_days: int) -> pd.DataFrame:
 def fetch_latest_price(ticker: str):
     """指定銘柄の直近終値のみを取得する（ポートフォリオの評価額計算用）。取得できない場合はNoneを返す"""
     try:
+        yf = _import_yfinance()
         hist = yf.download(ticker, period="5d", progress=False)
         if isinstance(hist.columns, pd.MultiIndex):
             hist.columns = hist.columns.get_level_values(0)
@@ -115,6 +128,7 @@ def search_yahoo_finance(query: str, max_results: int = 8):
     if not query:
         return []
     try:
+        yf = _import_yfinance()
         results = yf.Search(query, max_results=max_results).quotes
     except Exception:
         return []
@@ -139,6 +153,7 @@ def get_stock_name(ticker: str) -> str:
     if local_name:
         return local_name
     try:
+        yf = _import_yfinance()
         results = yf.Search(ticker, max_results=5).quotes
         for r in results:
             if r.get("symbol", "").upper() == ticker.upper():
@@ -254,7 +269,7 @@ def signal_badge_html(signal: str) -> str:
     symbol = SIGNAL_SYMBOLS.get(signal, "")
     return (
         f'<span style="background-color:{color};color:white;padding:4px 12px;'
-        f'border-radius:12px;font-weight:bold;font-size:0.95rem;">{symbol} {signal}</span>'
+        f'border-radius:12px;font-weight:bold;font-size:0.95rem;'">{symbol} {signal}</span>"
     )
 
 
