@@ -269,7 +269,7 @@ def signal_badge_html(signal: str) -> str:
     symbol = SIGNAL_SYMBOLS.get(signal, "")
     return (
         f'<span style="background-color:{color};color:white;padding:4px 12px;'
-        f'border-radius:12px;font-weight:bold;font-size:0.95rem;'">{symbol} {signal}</span>"
+        f'border-radius:12px;font-weight:bold;font-size:0.95rem;">{symbol} {signal}</span>'
     )
 
 
