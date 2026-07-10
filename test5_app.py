@@ -17,6 +17,15 @@ import altair as alt
 from streamlit_searchbox import st_searchbox
 from datetime import datetime, timedelta
 
+# apps フォルダから実行した場合でもルートのモジュールを参照できるようにする
+import sys
+from pathlib import Path
+
+# プロジェクトルートは apps/ の一つ上にある想定
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
+
 from local_stock_catalog import get_local_stock_name, search_local_stock_options
 
 # ------------------------------------------------------------
